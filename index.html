@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+sb_publishable_lyDdH-4oZxiE9r6KDrIPZg_e-7pEtTo
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = "https://blaamrfhpukqccibtkye.supabase.co";
+        const SUPABASE_KEY = "YOUR_PUBLISHABLE_KEY";
+
+        const supabaseClient = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+    </script>
+
+    <title>volticAI</title>
+</head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -833,8 +854,7 @@ function switchModal(type) {
 
 
 /* REGISTER */
-
-function register() {
+async function register() {
 
     const name =
         document.getElementById("registerName").value.trim();
@@ -850,21 +870,145 @@ function register() {
         return;
     }
 
-    user = {
-        name: name,
-        email: email
-    };
+    try {
 
-    localStorage.setItem("volticUser", JSON.stringify(user));
+        const { data, error } =
+            await supabaseClient.auth.signUp({
+                email: email,
+                password: password
+            });
 
-    alert("Account created successfully.");
+        if (error) {
+            alert(error.message);
+            return;
+        }
 
-    closeModals();
+        if (!data.user) {
+            alert("Registration could not be completed.");
+            return;
+        }
 
-    openDashboard();
+        if (data.session) {
+
+            const { error: profileError } =
+                await supabaseClient
+                    .from("profiles")
+                    .insert({
+                        id: data.user.id,
+                        full_name: name,
+                        suscription: "Free"
+                    });
+
+            if (profileError) {
+                console.error(profileError);
+                alert("Account created, but profile could not be saved.");
+                return;
+            }
+        }
+
+        user = {
+            name: name,
+            email: email,
+            id: data.user.id
+        };
+
+        localStorage.setItem(
+            "volticUser",
+            JSON.stringify(user)
+        );
+
+        alert("Account created successfully!");
+
+        closeModals();
+        openDashboard();
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Something went wrong during registration.");
+
+    }
 }
+    const name =
+        document.getElementById("registerName").value.trim();
 
+    const email =
+        document.getElementById("registerEmail").value.trim();
 
+    const password =
+        document.getElementById("registerPassword").value;
+
+    if (!name || !email || !password) {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    try {
+
+        const { data, error } =
+            await supabaseClient.auth.signUp({
+                email: email,
+                password: password
+            });
+
+        if (error) {
+            alert(error.message);
+            return;
+        }
+
+        if (!data.user) {
+            alert("Registration could not be completed.");
+            return;
+        }
+
+        /*
+         * Save additional user information
+         * in the profiles table.
+         */
+        if (data.session) {
+
+            const { error: profileError } =
+                await supabaseClient
+                    .from("profiles")
+                    .insert({
+                        id: data.user.id,
+                        full_name: name,
+                        suscription: "Free"
+                    });
+
+            if (profileError) {
+                console.error(profileError);
+                alert("Account created, but profile could not be saved.");
+                return;
+            }
+
+        }
+
+        user = {
+            name: name,
+            email: email,
+            id: data.user.id
+        };
+
+        localStorage.setItem(
+            "volticUser",
+            JSON.stringify(user)
+        );
+
+        alert(
+            "Account created successfully!"
+        );
+
+        closeModals();
+        openDashboard();
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Something went wrong during registration.");
+
+    }
+}
 /* LOGIN */
 
 function login() {
