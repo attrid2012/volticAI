@@ -1010,8 +1010,7 @@ async function register() {
     }
 }
 /* LOGIN */
-
-function login() {
+async function login() {
 
     const email =
         document.getElementById("loginEmail").value.trim();
@@ -1024,19 +1023,61 @@ function login() {
         return;
     }
 
-    user = {
-        name: email.split("@")[0],
-        email: email
-    };
+    try {
 
-    localStorage.setItem("volticUser", JSON.stringify(user));
+        const { data, error } =
+            await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
 
-    closeModals();
+        if (error) {
+            alert(error.message);
+            return;
+        }
 
-    openDashboard();
+        if (!data.user) {
+            alert("Login failed.");
+            return;
+        }
+
+        const { data: profile, error: profileError } =
+            await supabaseClient
+                .from("profiles")
+                .select("full_name, suscription")
+                .eq("id", data.user.id)
+                .single();
+
+        if (profileError) {
+            console.error(profileError);
+            alert("Logged in, but profile information could not be loaded.");
+            return;
+        }
+
+        user = {
+            id: data.user.id,
+            name: profile.full_name || email.split("@")[0],
+            email: data.user.email
+        };
+
+        premium =
+            profile.suscription === "Premium";
+
+        localStorage.setItem(
+            "volticUser",
+            JSON.stringify(user)
+        );
+
+        closeModals();
+        openDashboard();
+
+    } catch (error) {
+
+        console.error(error);
+        alert("Something went wrong during login.");
+
+    }
 }
-
-
 /* DASHBOARD */
 
 function openDashboard() {
